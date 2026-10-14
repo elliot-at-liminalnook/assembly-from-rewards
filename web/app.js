@@ -1,23 +1,39 @@
 // Presentation only. All world transitions, choices, learning, and reset sampling
-// happen in Rust/WASM. The SVG is interpolated between actual engine states.
+// happen in Rust/WASM. The 3D rig interpolates between actual engine states.
+import { Studio } from './studio.js';
 const $ = (id) => document.getElementById(id);
 const ACTIONS = ['Left', 'Right', 'Lift', 'Lower', 'Close', 'Open'];
 const STARTS = ['On the table', 'Ready to grasp', 'Already held', 'At the socket', 'Partly inserted'];
 const COLORS = ['#187f70', '#627dbe', '#b37c40', '#9e6f9e', '#91a34e'];
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-let w, running = false, watching = false, busy = false, timer = 0, animation = 0;
+let w, running = false, watching = false, busy = false, timer = 0;
 let series = [], lastEpisode = -1;
 const number = (n) => n.toLocaleString('en-US');
 const fixed = (n) => n.toFixed(3);
-const svgNS = 'http://www.w3.org/2000/svg';
-
-for (let i = 0; i < 5; i++) {
-  const el = document.createElementNS(svgNS, 'text');
-  el.setAttribute('x', 99 + i * 110); el.setAttribute('y', 331);
-  el.setAttribute('text-anchor', 'middle'); el.setAttribute('class', 'svg-caption');
-  el.textContent = i < 4 ? String(i) : '';
-  $('positions').append(el);
+let studio;
+try {
+  studio = new Studio($('world'));
+} catch (error) {
+  $('renderer-error').hidden = false;
+  $('renderer-error').textContent = '3D graphics are unavailable in this browser. You can still train and inspect the learner below.';
+  $('detail-frame').hidden = true;
+  console.error('Studio renderer:', error);
 }
+for (const button of document.querySelectorAll('[data-view]')) {
+  button.addEventListener('click', () => {
+    studio?.camera(button.dataset.view);
+    for (const other of document.querySelectorAll('[data-view]')) other.setAttribute('aria-pressed', String(other === button));
+  });
+}
+$('detail-toggle').addEventListener('click', () => {
+  if (!studio) return;
+  studio.detail = !studio.detail;
+  $('detail-frame').hidden = !studio.detail;
+  $('detail-toggle').setAttribute('aria-pressed', String(studio.detail));
+  $('detail-toggle').querySelector('span').textContent = studio.detail ? 'ON' : 'OFF';
+  studio.requestDraw();
+});
+
 $('q-bars').innerHTML = ACTIONS.map((name, i) => `<div class="q-row" id="q-row-${i}"><span>${name}</span><div class="bar-track"><div class="bar-fill" id="q-fill-${i}"></div></div><span id="q-number-${i}">0.00</span></div>`).join('');
 $('reset-rows').innerHTML = STARTS.map((name, i) => `<div class="reset-row" id="reset-${i}"><span class="reset-name"><span class="reset-number">${i + 1}</span>${name}</span><span class="reset-rate" id="rate-${i}">Untried</span><span class="probability"><span class="bar-track"><span class="bar-fill" id="prob-fill-${i}" style="display:block"></span></span><b id="prob-${i}">20%</b></span></div>`).join('');
 $('chart-legend').innerHTML = STARTS.map((name, i) => `<span><i style="background:${COLORS[i]}"></i>${name}</span>`).join('');
@@ -32,33 +48,11 @@ function snapshot() {
     updated: w.read(30), start: w.read(31), exploratory: !!w.read(32), updates: w.read(33) };
 }
 
-// Pixel positions have no role in learning. Insertion is 22 pixels per unit.
-function geometry(s) {
-  const pegBottom = s.depth > 0 ? 248 + s.depth * 22 : (s.held && s.y ? 140 : 248);
-  const handY = s.y ? 108 : (s.held ? 216 + s.depth * 22 : 216);
-  return { hx: 99 + s.x * 110, hy: handY, px: 99 + s.peg * 110, py: pegBottom - 64, gap: s.held ? 13 : 22 };
-}
-function paint(g) {
-  $('hand').setAttribute('transform', `translate(${g.hx} ${g.hy})`);
-  $('stem').setAttribute('y1', 46 - g.hy); $('stem').setAttribute('y2', -25);
-  $('fingers').setAttribute('d', `M${-g.gap} -5 V24 H${-g.gap + 6} M${g.gap} -5 V24 H${g.gap - 6}`);
-  $('peg').setAttribute('transform', `translate(${g.px} ${g.py})`);
-}
+// The renderer receives a state, never a target action sequence. Camera changes
+// and inverse kinematics cannot write to the learner or change its outcomes.
 function drawWorld(s, animate) {
-  cancelAnimationFrame(animation);
-  $('success-mark').setAttribute('visibility', s.state.depth === 2 ? 'visible' : 'hidden');
-  const from = geometry(s.previous), to = geometry(s.state);
-  if (!animate || reduceMotion) { paint(to); return; }
-  const started = performance.now();
-  function frame(time) {
-    const t = Math.min(1, (time - started) / 180);
-    const eased = t * t * (3 - 2 * t);
-    const g = {};
-    for (const key of Object.keys(to)) g[key] = from[key] + (to[key] - from[key]) * eased;
-    paint(g);
-    if (t < 1) animation = requestAnimationFrame(frame);
-  }
-  animation = requestAnimationFrame(frame);
+  $('studio-success').hidden = s.state.depth !== 2;
+  studio?.setState(s.state, animate && !reduceMotion, 430);
 }
 
 function record() {
@@ -148,7 +142,7 @@ function loop() {
   if (!running) return;
   if (watching && w.read(21)) { stop(); return; }
   advance();
-  timer = setTimeout(loop, w.read(21) ? 1000 : 300);
+  timer = setTimeout(loop, w.read(21) ? 1200 : 550);
 }
 function fresh() {
   stop();

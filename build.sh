@@ -4,7 +4,7 @@ set -eu
 cd "$(dirname "$0")"
 RUSTC="${RUSTC:-rustc}"
 mkdir -p dist
-cp web/index.html web/style.css web/app.js dist/
+cp web/index.html web/style.css web/app.js web/studio.js dist/
 cp src/lib.rs dist/source.rs
 cp README.md dist/README.md
 touch dist/.nojekyll

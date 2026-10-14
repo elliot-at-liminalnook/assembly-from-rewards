@@ -19,7 +19,7 @@
   </section>
 
   <section class="wrap section" id="lab">
-    <div class="section-heading"><div><div class="eyebrow">THE EXPERIMENT</div><h2>Let the robot figure it out.</h2></div><p>The animation is driven by the running Rust code.<br>No recorded moves. No pretrained answers.</p></div>
+    <div class="section-heading"><div><div class="eyebrow">THE EXPERIMENT</div><h2>Let the robot figure it out.</h2></div><p>The animation is driven by the running Rust code.<br>Studio rendering. No recorded moves.</p></div>
     <div id="error" role="alert" hidden></div>
     <div class="lab-shell">
       <div class="lab-toolbar">
@@ -31,20 +31,20 @@
       <div class="lab-grid">
         <div class="world-panel">
           <div class="world-header"><span class="live-label"><span class="tiny-dot"></span> LIVE TOY WORLD</span><span id="episode-label">Ready to explore</span></div>
-          <svg id="world" viewBox="0 0 660 350" role="img" aria-label="A gripper, a teal peg, and a socket on a five-position table. The learner controls the gripper.">
-            <defs><pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#dedfd7"/></pattern><linearGradient id="table-gradient" x2="0" y2="1"><stop stop-color="#e3e5db"/><stop offset="1" stop-color="#f0f1e9"/></linearGradient></defs>
-            <rect width="660" height="350" fill="url(#dots)"/>
-            <line x1="70" y1="46" x2="590" y2="46" stroke="#d2d6cb" stroke-width="9" stroke-linecap="round"/>
-            <text x="35" y="112" class="svg-note">LIFTED</text><text x="35" y="222" class="svg-note">TABLE</text>
-            <path d="M60 248 H525 V292 H553 V248 H606 V308 H60Z" fill="url(#table-gradient)" stroke="#b8bfb0" stroke-width="1.5"/>
-            <path d="M525 248 V292 H553 V248" fill="none" stroke="#798a7d" stroke-width="2"/>
-            <line x1="526" y1="268" x2="553" y2="268" stroke="#9eac9b" stroke-dasharray="3 3"/>
-            <text x="539" y="331" text-anchor="middle" class="svg-caption">SOCKET</text>
-            <g id="positions"></g>
-            <g id="peg"><rect x="-9" y="0" width="18" height="64" rx="3" fill="#187f70"/><rect x="-6" y="4" width="4" height="55" rx="2" fill="#65ad95"/></g>
-            <g id="hand"><line id="stem" x1="0" y1="0" x2="0" y2="0" stroke="#a9b0a3" stroke-width="5"/><rect x="-23" y="-25" width="46" height="20" rx="5" fill="#2e403a"/><path id="fingers" d="M-21 -5 V24 H-14 M21 -5 V24 H14" fill="none" stroke="#2e403a" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></g>
-            <g id="success-mark" visibility="hidden"><rect x="240" y="12" width="180" height="34" rx="17" fill="#d9f0c7"/><text x="330" y="34" text-anchor="middle" fill="#274b29" font-size="13" font-weight="700">ASSEMBLED · REWARD +1</text></g>
-          </svg>
+          <div class="studio-stage">
+            <canvas id="world" tabindex="0" role="img" aria-label="Interactive 3D workbench. Drag to rotate; use arrow keys when focused."></canvas>
+            <div class="studio-label"><span class="studio-dot"></span> ASSEMBLY / 001 <small>LIVE LEARNER</small></div>
+            <div id="detail-frame" aria-hidden="true"><span>CONTACT VIEW <b>SYNC</b></span></div>
+            <div id="studio-success" hidden>ASSEMBLED <span>REWARD +1</span></div>
+            <div class="studio-scale" aria-hidden="true"><i></i> FIVE POSITIONS · ONE GOAL</div>
+            <div id="renderer-error" role="status" hidden></div>
+          </div>
+          <div class="camera-toolbar" aria-label="Camera controls">
+            <div class="camera-views"><button data-view="studio" aria-pressed="true">Studio</button><button data-view="front" aria-pressed="false">Front</button><button data-view="overhead" aria-pressed="false">Overhead</button></div>
+            <span class="orbit-hint">Drag to orbit</span>
+            <button id="detail-toggle" aria-pressed="true">Close-up <span>ON</span></button>
+          </div>
+          <p id="render-note">Live 3D view · The illustrative arm follows the toy hand’s actual moves.</p>
           <div class="world-caption"><span id="state-label">Peg on the table · hand raised</span><span id="step-count">Action 0 / 40</span></div>
           <div class="controls"><button id="run" class="primary" disabled>▶ Run training</button><button id="single" disabled>One action</button><button id="fast" disabled>Train 1,000 episodes</button></div>
           <div class="watch-row"><button id="watch" class="text-button" disabled>▷ Watch learned policy</button><span>Full start, exploration off, learning off.</span></div>
@@ -94,7 +94,7 @@ repeat:
     Q[state, action] += 0.25 * (target - Q[state, action])
     state = next
 
-  record_outcome_for_this_start()</code></pre><div class="code-notes"><h3>Three pieces to follow</h3><p><b>The world</b> decides what a move does. It contains no learned behavior.</p><p><b>The Q table</b> remembers which actions led toward future reward. This substitutes for the paper’s neural controller.</p><p><b>The reset sampler</b> chooses where to begin the next attempt. Its success history is separate from the Q table.</p><a href="./README.md" class="text-link">Read the complete walkthrough ↗</a><a href="https://github.com/elliot-at-liminalnook/assembly-from-rewards" class="text-link" target="_blank" rel="noreferrer">Build, test, or fork on GitHub ↗</a></div></div>
+  record_outcome_for_this_start()</code></pre><div class="code-notes"><h3>Three pieces to follow</h3><p><b>The world</b> decides what a move does. It contains no learned behavior.</p><p><b>The Q table</b> remembers which actions led toward future reward. This substitutes for the paper’s neural controller.</p><p><b>The reset sampler</b> chooses where to begin the next attempt. Its success history is separate from the Q table.</p><a href="./README.md" class="text-link">Read the complete walkthrough ↗</a><a href="./studio.js" class="text-link">Inspect the dependency-free 3D renderer ↗</a><a href="https://github.com/elliot-at-liminalnook/assembly-from-rewards" class="text-link" target="_blank" rel="noreferrer">Build, test, or fork on GitHub ↗</a></div></div>
     <details class="source-details"><summary>Read the actual Rust source compiled into this page <span>+</span></summary><p>The simulator, learner, reset sampler, browser interface, and native tests, with comments. The build copies this exact source alongside its compiled WebAssembly.</p><pre><code id="actual-source">Loading source…</code></pre></details>
   </section>
   <section class="wrap closing"><h3>What this example leaves out</h3><p>Contact forces, camera perception, continuous motion, neural generalization, and multiple tasks. The original paper also includes movement penalties; this toy uses only the completion reward. Nothing here establishes real-robot performance.</p><div><a href="https://arxiv.org/html/2610.13354v1#S4" target="_blank" rel="noreferrer">AlphaNIST · method ↗</a><a href="https://arxiv.org/html/2603.15789v3#S3.SS2" target="_blank" rel="noreferrer">OmniReset · reset generation ↗</a></div></section>

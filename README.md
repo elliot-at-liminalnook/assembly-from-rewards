@@ -127,7 +127,8 @@ AND action counts.
 | File | Purpose |
 |---|---|
 | `src/lib.rs` | State, rules, resets, sampling, Q-learning, numeric browser interface, native tests |
-| `web/app.js` | Calls WASM; draws those states; shows metrics and the exact Q update |
+| `web/app.js` | Calls WASM; forwards states to the renderer; shows metrics and the exact Q update |
+| `web/studio.js` | Procedural 3D meshes, lighting, shadows, visual inverse kinematics, and cameras; no dependencies |
 | `web/index.html` | The lesson, pseudocode, controls, source viewer |
 | `web/style.css` | Responsive page styling; no framework |
 | `tests/wasm.mjs` | Exercises the real compiled WASM using Node's built-in runtime |
@@ -140,6 +141,44 @@ calls a small exported interface: `reset`, `begin`, `step`, `train`, `evaluate`,
 An animation interpolates between two real discrete states; the interpolation has
 no effect on the world or on learning. Watching the learned policy does not update
 the Q table, the outcome histories, or the training random-number stream.
+
+## The 3D studio: better pictures, the same small learner
+
+The visual reference is the [AlphaNIST project site](https://alpha-nist.github.io/):
+white robot shells, dark joints, metallic fixtures, gold parts, and a synchronized
+contact close-up. Our meshes are original, generated in code; no assets or videos
+from that site are copied. The renderer uses the browser's built-in **WebGL** API.
+
+Keep this boundary in mind: the **discrete Rust world is the simulation**. The
+articulated arm is an illustrative rendering rig. It is not a simulated Franka,
+does not enforce real joint limits or contact dynamics, and is not the controller
+being learned. The gripper and peg follow the actual toy state.
+
+Here is how a frame is made:
+
+1. `poseFor(state)` maps the hand's rail position, height, grip, and insertion depth
+   into drawing coordinates. Partial insertion lowers the peg by one visual unit.
+2. During an action, smooth interpolation moves from the previous drawing pose to
+   the new one. A reset immediately places the objects in their new snapshot.
+3. `scene()` places a two-link arm between a fixed shoulder and the moving wrist.
+   It computes the elbow with the cosine rule. This is **visual inverse kinematics**:
+   a way to draw the arm, not an extra learned action or motion planner.
+4. Rounded-box meshes form the fixture and gripper. Revolving a radius/height
+   profile creates the arm shells, joints, peg, socket collar, and fasteners.
+5. A shadow pass renders depth from the light. The main pass uses that depth,
+   surface normals, soft shadow filtering, diffuse light, and specular highlights.
+6. The same scene is drawn again into the close-up rectangle with another camera.
+   Both views therefore show the same instant of the running learner.
+
+Drag the scene to orbit, use the Studio / Front / Overhead buttons, or focus the
+canvas and use arrow keys (Home restores Studio). The close-up can be switched off.
+Camera operations never call the learning API. Rendering stops when the scene is
+still and resumes on an action, camera change, or resize. Reduced-motion settings
+disable the movement interpolation. If WebGL is unavailable, learning and the
+written lesson remain available with a visible rendering error message.
+
+The renderer's comments follow the same order as this description. It is kept in
+a separate file so the learning algorithm stays small and readable.
 
 ## GitHub Pages
 
