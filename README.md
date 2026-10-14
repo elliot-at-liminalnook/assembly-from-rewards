@@ -188,7 +188,10 @@ The included workflow compiles the WASM, runs native and WASM tests, uploads `di
 and deploys it. Subsequent pushes repeat that process automatically. A fork needs
 Pages/Actions enabled under its own settings. All asset URLs are relative, so a
 repository subpath works. The published source viewer loads the same Rust file
-that the workflow compiled into the module.
+that the workflow compiled into the module. The build gives the JavaScript, CSS,
+WASM, and displayed Rust source content-derived filenames, so a new page cannot
+accidentally combine an old cached renderer with a new interface. This uses only
+standard shell utilities, with no bundler or package manager.
 
 ## Sources and scope
 
