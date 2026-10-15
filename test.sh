@@ -6,4 +6,5 @@ mkdir -p build
 ./build/core-tests
 node --check web/app.js
 node --check web/studio.js
+node --check web/comparison.js
 node tests/wasm.mjs

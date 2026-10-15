@@ -1,6 +1,7 @@
 // Presentation only. All world transitions, choices, learning, and reset sampling
 // happen in Rust/WASM. The 3D rig interpolates between actual engine states.
 import { Studio } from './studio.js';
+import { mountComparison } from './comparison.js';
 const $ = (id) => document.getElementById(id);
 const ACTIONS = ['Left', 'Right', 'Lift', 'Lower', 'Close', 'Open'];
 const STARTS = ['On the table', 'Ready to grasp', 'Already held', 'At the socket', 'Partly inserted'];
@@ -208,7 +209,7 @@ async function load() {
     const { instance } = await WebAssembly.instantiate(await response.arrayBuffer(), {});
     w = instance.exports;
     $('runtime').textContent = '● WebAssembly running · zero packages';
-    disableControls(false); fresh();
+    disableControls(false); fresh(); mountComparison(w);
   } catch (error) {
     $('runtime').textContent = 'WebAssembly unavailable';
     $('error').hidden = false;

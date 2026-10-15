@@ -151,8 +151,9 @@ void main(){vec4 p=fract(gl_FragCoord.z*vec4(1.0,255.0,65025.0,16581375.0));
 p-=p.yzww*vec4(1.0/255.0,1.0/255.0,1.0/255.0,0.0);gl_FragColor=p;}`;
 
 export class Studio {
-  constructor(canvas) {
+  constructor(canvas, options = {}) {
     this.canvas=canvas;
+    this.options=options;
     const gl=this.gl=canvas.getContext('webgl',{antialias:true,alpha:false,preserveDrawingBuffer:true});
     if(!gl) throw new Error('This browser could not create a WebGL canvas.');
     this.program=this.compile(VERTEX,FRAGMENT);
@@ -160,14 +161,15 @@ export class Studio {
     this.meshes={}; this.makeMeshes(); this.makeShadow();
     this.lightVP=multiply(ortho(7.5,7.5,.1,16),lookAt([-3.5,7,4],[0,.5,0]));
     this.pose=this.poseFor({x:2,y:1,peg:0,depth:0,held:false});
-    this.yaw=-.62; this.elevation=.36; this.distance=5.8; this.detail=true;
+    this.yaw=-.62; this.elevation=.36; this.distance=5.8; this.detail=options.detail !== false;
     this.pending=0; this.motion=null; this.detailRect=null;
     this.resizeObserver=new ResizeObserver(()=>this.requestDraw());
     this.resizeObserver.observe(canvas);
     this.pointerControls();
     canvas.addEventListener('webglcontextlost',event=>{
       event.preventDefault(); cancelAnimationFrame(this.pending);
-      document.getElementById('render-note').textContent='3D view paused: graphics context lost. Reload to restore. Learning remains independent.';
+      const note=document.getElementById(options.noteId || 'render-note');
+      if(note)note.textContent='3D view paused: graphics context lost. Reload to restore. Learning remains independent.';
     });
     canvas.addEventListener('webglcontextrestored',()=>location.reload());
     this.requestDraw();
@@ -213,7 +215,7 @@ export class Studio {
   }
   makeShadow() {
     const gl=this.gl;
-    this.shadowSize=Math.min(2048,gl.getParameter(gl.MAX_TEXTURE_SIZE));
+    this.shadowSize=Math.min(this.options.shadowSize || 2048,gl.getParameter(gl.MAX_TEXTURE_SIZE));
     this.shadowTexture=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,this.shadowTexture);
     gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,this.shadowSize,this.shadowSize,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
     gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);

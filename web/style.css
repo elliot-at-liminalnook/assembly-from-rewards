@@ -1065,3 +1065,82 @@ footer {
   .camera-toolbar button { font-size:9px; padding:6px 7px; }
   #render-note { margin-left:15px; margin-right:15px; }
 }
+
+/* Shared versus separate: one matched experiment, two live 3D workbenches. */
+.comparison-intro { max-width:920px; margin:-8px 0 28px; color:var(--muted); }
+.comparison-controls { display:flex; align-items:center; flex-wrap:wrap; gap:12px; padding:22px 24px 14px; }
+#compare-status { font-size:12px; color:var(--muted); }
+.comparison-budget { display:flex; flex-wrap:wrap; gap:8px 24px; padding:0 24px 20px; font:11px/1.6 var(--mono); color:var(--muted); }
+.comparison-grid { display:grid; grid-template-columns:1fr 1fr; border-top:1px solid var(--line); }
+.compare-arm { min-width:0; }
+.compare-arm + .compare-arm { border-left:1px solid var(--line); }
+.compare-arm-heading { padding:22px 24px; display:flex; align-items:center; justify-content:space-between; gap:12px; background:#ecf3e7; }
+.separate-arm .compare-arm-heading { background:#f0edf5; }
+.compare-arm-heading h3 { margin:5px 0 0; font-size:21px; letter-spacing:-.5px; }
+.memory-symbol { font:10px/1.6 var(--mono); color:var(--muted); white-space:nowrap; }
+.compare-stage { position:relative; height:340px; background:#d1d6d4; }
+.compare-stage canvas { display:block; width:100%; height:100%; touch-action:none; }
+.compare-overlay { position:absolute; left:16px; top:16px; padding:6px 9px; font:10px/1.5 var(--mono); background:#f8faf2e8; border:1px solid #ffffff80; border-radius:4px; pointer-events:none; }
+.compare-overlay.solved { color:#116452; background:#d2edc8; }
+.compare-scene-label { position:absolute; bottom:14px; left:18px; font:9px var(--mono); letter-spacing:1.7px; pointer-events:none; color:#394e44; }
+.compare-motion { min-height:42px; margin:0; padding:12px 24px; font:11px/1.6 var(--mono); border-bottom:1px solid var(--line); }
+.task-results { padding:10px 24px; }
+.task-result { display:grid; grid-template-columns:1fr auto; gap:8px; padding:10px 0; border-bottom:1px solid #e6e9df; font-size:12px; }
+.task-result:last-child { border:0; }
+.task-result small { display:block; color:var(--muted); font-size:10px; }
+.task-result b { align-self:center; font:12px var(--mono); color:var(--muted); }
+.task-result.solved b { color:var(--teal); }
+.compare-counts { display:flex; justify-content:space-between; gap:12px; padding:12px 24px 20px; font:10px/1.6 var(--mono); color:var(--muted); }
+.compare-watch-controls { display:flex; flex-wrap:wrap; align-items:end; gap:12px; padding:22px 24px 12px; border-top:1px solid var(--line); }
+.compare-watch-controls label { display:grid; gap:5px; font-size:11px; }
+.compare-watch-controls select { padding:8px; background:#fffef8; border:1px solid #b9c7b3; border-radius:5px; max-width:100%; }
+.compare-watch-controls>span { font-size:11px; align-self:center; color:var(--muted); }
+.compare-verification { padding:0 24px 20px; margin:0; }
+.transfer-inspector { display:grid; grid-template-columns:1fr 1fr; gap:36px; background:#f0f3e9; border-top:1px solid var(--line); padding:30px 24px; }
+.transfer-copy h3 { font-size:24px; line-height:1.3; margin:9px 0 16px; letter-spacing:-.6px; }
+.transfer-copy>p { font-size:13px; color:var(--muted); }
+.transfer-copy button { display:block; margin:10px 0; }
+.transfer-values { align-self:center; }
+.probe-head,.probe-row { display:grid; grid-template-columns:1fr 78px 112px; gap:12px; align-items:center; }
+.probe-head { font:9px/1.5 var(--mono); padding-bottom:12px; border-bottom:1px solid var(--line); color:var(--muted); }
+.probe-row { padding:6px 0; font:11px var(--mono); }
+.probe-row>span { display:flex; gap:8px; align-items:center; }
+.probe-row i { height:4px; display:inline-block; background:var(--teal); max-width:52px; min-width:0; }
+.probe-row>span:last-child i { background:#8f78a6; }
+#compare-provenance { font-size:12px; padding:12px; border-left:3px solid var(--teal); background:#e3ecd9; }
+#compare-chart { width:100%; display:block; overflow:visible; }
+#compare-chart text { font:11px var(--mono); fill:var(--muted); }
+.legend-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin:0 5px 0 14px; }
+.shared-dot { background:#187f70; }.separate-dot { background:#8f78a6; }
+.comparison-details { padding:20px 24px; border-top:1px solid var(--line); font-size:13px; }
+.comparison-details summary { cursor:pointer; font-weight:650; }
+.comparison-details p { max-width:980px; color:var(--muted); }
+.comparison-details pre { background:#f0f3e9; padding:18px; overflow:auto; font-size:12px; }
+.sampling-explanation { display:grid; grid-template-columns:1fr 1fr; gap:50px; }
+.sampling-explanation h2 { font-size:35px; }
+.sampling-explanation p,.walking-note p { font-size:15px; color:var(--muted); }
+.sampling-examples { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:24px 0; }
+.sampling-examples>div { border:1px solid var(--line); padding:14px 10px; border-radius:8px; text-align:center; }
+.sampling-examples>div:nth-child(2) { background:#e3efd7; border-color:#9ec486; }
+.sampling-examples strong { display:block; font-size:30px; }
+.sampling-examples span,.sampling-examples small { display:block; font-size:10px; color:var(--muted); }
+.sampling-examples b { display:block; font:11px var(--mono); margin:12px 0 5px; }
+.walking-note { max-width:1050px; }.walking-note a { font-size:13px; }
+@media(max-width:1050px) {
+  .memory-symbol { display:none; }.compare-stage { height:300px; }
+  .compare-arm-heading h3 { font-size:19px; }.transfer-inspector { gap:24px; }
+}
+@media(max-width:720px) {
+  .comparison-grid,.transfer-inspector,.sampling-explanation { grid-template-columns:1fr; }
+  .compare-arm + .compare-arm { border-left:0; border-top:1px solid var(--line); }
+  .comparison-controls,.comparison-budget,.compare-watch-controls { padding-left:15px; padding-right:15px; }
+  .compare-arm-heading { padding:18px 15px; }.compare-stage { height:290px; }
+  .task-results,.compare-counts,.compare-motion { padding-left:15px; padding-right:15px; }
+  .transfer-inspector { padding:25px 15px; }.transfer-copy button { font-size:11px; }
+  .comparison-details { padding:18px 15px; }.comparison-details pre { font-size:10px; }
+  .comparison-budget { font-size:9px; gap:6px 12px; }
+  .comparison-controls>span { width:100%; }.compare-watch-controls>span { width:100%; }
+  .probe-head,.probe-row { grid-template-columns:1fr 72px 104px; gap:8px; }
+  .sampling-explanation { gap:12px; }.sampling-explanation h2 { font-size:30px; }
+  .nav nav { gap:12px; font-size:10px; }.brand { font-size:9px; letter-spacing:.5px; }
+}

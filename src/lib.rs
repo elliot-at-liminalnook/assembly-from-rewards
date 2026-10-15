@@ -3,9 +3,11 @@
 //! This is NOT a reproduction of AlphaNIST. It keeps three ideas: diverse reset
 //! states, success-guided reset sampling, and a terminal success reward. We use
 //! tabular Q-learning instead of PPO so every learned number is inspectable.
+//! The transfer module compares one shared table with separate task tables.
 //! No crates, neural networks, physics engine, demonstrations, or build framework.
 
 use std::sync::Mutex;
+mod transfer;
 
 const ACTIONS: usize = 6; // left, right, lift, lower, close, open
 const STATES: usize = 5 * 2 * 5 * 3 * 2;

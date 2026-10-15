@@ -3,23 +3,72 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="An interactive, dependency-free WebAssembly lesson: how a robot learns earlier actions from a reward at the very end.">
+  <meta name="description" content="An interactive Rust/WebAssembly lab: compare shared and separate learning across three assembly layouts, then inspect delayed rewards and success-guided sampling.">
   <title>Assembly from rewards — a tiny learning lab</title>
   <link rel="stylesheet" href="./style.css">
   <script type="module" src="./app.js"></script>
 </head>
 <body>
-<header class="nav wrap"><a class="brand" href="#"><span class="brand-mark">⊔</span> LITTLE LEARNING LABS</a><nav aria-label="Page"><a href="#lab">Experiment</a><a href="#explanation">How it learns</a><a href="#source">The code ↗</a></nav></header>
+<header class="nav wrap"><a class="brand" href="#"><span class="brand-mark">⊔</span> LITTLE LEARNING LABS</a><nav aria-label="Page"><a href="#lab">Experiment</a><a href="#single-task">One learner</a><a href="#explanation">How it learns</a><a href="#source">The code ↗</a></nav></header>
 <main>
   <section class="hero wrap">
-    <div class="eyebrow"><span class="tiny-dot"></span> 01 / LEARNING FROM THE END</div>
-    <h1>One reward.<br>A whole sequence learned.</h1>
-    <div class="hero-bottom"><p>Pick up a peg. Carry it over. Fit it into a socket.<br>The only reward comes at the end. So how does the beginning get learned?</p><a class="text-link" href="#lab">Find out by running it <span>↓</span></a></div>
+    <div class="eyebrow"><span class="tiny-dot"></span> LEARNING FROM THE END · LEARNING FROM EACH OTHER</div>
+    <h1>Practice together.<br>Learn more than one task.</h1>
+    <div class="hero-bottom"><p>Three assemblies. One completion reward.<br>Watch an easier task teach an ending that a harder task can reuse.</p><a class="text-link" href="#lab">Find out by running it <span>↓</span></a></div>
     <div class="context-strip"><span>Inspired by <a href="https://arxiv.org/abs/2610.13354" target="_blank" rel="noreferrer">AlphaNIST ↗</a></span><span>A deliberately tiny teaching model</span><span id="runtime" role="status">Loading WebAssembly…</span></div>
   </section>
 
   <section class="wrap section" id="lab">
-    <div class="section-heading"><div><div class="eyebrow">THE EXPERIMENT</div><h2>Let the robot figure it out.</h2></div><p>The animation is driven by the running Rust code.<br>Studio rendering. No recorded moves.</p></div>
+    <div class="section-heading"><div><div class="eyebrow">01 / DOES EXPERIENCE TRANSFER?</div><h2>Three tasks. One shared memory.</h2></div><p>The same practice budget on both sides.<br>Only the sharing of learned values changes.</p></div>
+    <p class="comparison-intro">A short carry teaches a useful ending. Can a longer carry borrow it? These three layouts use the same peg and socket, starting <b>one, two, or four positions apart</b>. Their final moves overlap. Every score and move below comes from the running learner.</p>
+    <div class="lab-shell comparison-shell">
+      <div class="lab-toolbar">
+        <label>Practice starts<select id="compare-mode" disabled><option value="0">Full starts · isolate transfer</option><option value="1">Mixed starts · uniform</option><option value="2">Mixed starts · success-guided</option></select></label>
+        <label class="seed-label">Random seed<input id="compare-seed" type="number" min="1" max="4294967295" value="7" disabled></label>
+        <button id="compare-reset" class="quiet-button" disabled>↺ Reset comparison</button>
+        <span class="toolbar-note">Settings reset both learners.</span>
+      </div>
+      <div class="comparison-controls">
+        <button id="compare-run" class="primary" disabled>▶ Compare 900 attempts</button>
+        <button id="compare-batch" disabled>+90 attempts</button>
+        <span id="compare-status" role="status">Both memories start empty.</span>
+      </div>
+      <div class="comparison-budget"><span><b id="compare-rounds">0</b> attempts per side</span><span>40 actions maximum per attempt</span><span id="compare-start-note">Same task, same start, paired random seeds.</span></div>
+      <div class="comparison-grid">
+        <article class="compare-arm shared-arm"><div class="compare-arm-heading"><div><span class="eyebrow">LEARN TOGETHER</span><h3>One controller, all tasks</h3></div><span class="memory-symbol">A + B + C → Q</span></div>
+          <div class="compare-stage"><canvas id="compare-world-0" tabindex="0" role="img" aria-label="Shared learner 3D assembly view"></canvas><span class="compare-overlay" id="compare-overlay-0">Untrained · long carry</span><span class="compare-scene-label">SHARED EXPERIENCE</span></div>
+          <p class="compare-motion" id="compare-motion-0">Choose a task below to watch its current policy.</p>
+          <div class="task-results" id="compare-results-0"></div>
+          <div class="compare-counts"><span><b id="compare-updates-0">0</b> learning actions</span><span>1 table receives all practice</span></div>
+        </article>
+        <article class="compare-arm separate-arm"><div class="compare-arm-heading"><div><span class="eyebrow">LEARN SEPARATELY</span><h3>A controller for each task</h3></div><span class="memory-symbol">A → Q₁ · B → Q₂ · C → Q₃</span></div>
+          <div class="compare-stage"><canvas id="compare-world-1" tabindex="0" role="img" aria-label="Separate learner 3D assembly view"></canvas><span class="compare-overlay" id="compare-overlay-1">Untrained · long carry</span><span class="compare-scene-label">SEPARATE EXPERIENCE</span></div>
+          <p class="compare-motion" id="compare-motion-1">Choose a task below to watch its current policy.</p>
+          <div class="task-results" id="compare-results-1"></div>
+          <div class="compare-counts"><span><b id="compare-updates-1">0</b> learning actions</span><span>3 tables keep practice separate</span></div>
+        </article>
+      </div>
+      <div class="compare-watch-controls"><label>Watch both on<select id="compare-task"><option value="0">A · Short carry · easy</option><option value="1">B · Medium carry</option><option value="2" selected>C · Long carry · hard</option></select></label><button id="compare-watch" disabled>▷ Watch both policies</button><button id="compare-step" disabled>One policy action</button><span>Learning & exploration off. Drag either view to orbit.</span></div>
+      <p class="fine compare-verification" id="compare-render-note">Each task check is one full-start, greedy rollout, not an estimated success percentage. A dash means it did not finish within 40 actions. Actual learning-action counts can differ because successful attempts end early.</p>
+      <div class="transfer-inspector">
+        <div class="transfer-copy"><div class="eyebrow">THE TRANSFER MICROSCOPE</div><h3>Look at what the hard task inherits.</h3><p>Inspect the same situation: <b>peg held, raised, one position left of the socket</b>. All three tasks can reach it. The shared controller can use values learned there by any task. The hard specialist can only use its own experience.</p>
+          <button id="compare-easy" disabled>Fresh experiment: 300 easy-only attempts</button><button id="compare-hard" disabled>Then add 90 hard-only attempts</button>
+          <p class="fine">The first button resets both memories. Watch the shared values rise while hard-task practice stays at zero. The second continues that experiment. Some seeds need more practice.</p>
+        </div>
+        <div class="transfer-values"><div class="probe-head"><span>Action at this shared situation</span><span>Shared Q</span><span>Hard specialist Q</span></div><div id="compare-probe"></div><p id="compare-provenance" role="status">No updates yet.</p><p class="fine">These are learned future-reward values, not success probabilities. Counts identify which tasks updated this row; they are not estimates of how much each task caused the result.</p></div>
+      </div>
+      <div class="chart-panel"><div class="chart-top"><h3>When does each learner solve more tasks?</h3><span><i class="legend-dot shared-dot"></i> Shared <i class="legend-dot separate-dot"></i> Separate</span></div><svg id="compare-chart" viewBox="0 0 1000 210" role="img" aria-label="Number of full-start task checks solved, from zero to three, against training attempts per side"></svg><p class="fine">The vertical axis counts the three full-start checks solved at each checkpoint. Results are computed live, may fluctuate, and vary with seed. This is a toy experiment, not the paper’s benchmark.</p></div>
+      <details class="comparison-details"><summary>Why this comparison works—and where the analogy stops</summary><p>Both sides use identical world rules, rewards, learning rates, exploration and 40-action limits. Ordinary comparison practice rotates evenly through A, B and C. With full or uniform starts, each paired attempt uses the same task, reset and random seed. Adaptive mode lets each side choose its own reset from its own outcomes; task allocation stays round-robin, unlike AlphaNIST’s joint task/reset sampler.</p><p>The only memory difference: the shared controller writes to <code>Q[state, action]</code>; separate controllers write to <code>Q[task, state, action]</code>. These tasks differ in starting carry distance, not contact geometry. Identical finishing states therefore share values exactly. This makes positive transfer visible, but does not test the paper’s learned generalization across nuts, gears and connectors. The longer task still has to discover its earlier moves; finishing knowledge alone does not solve it.</p><pre><code>task = next_task()                 // same for both sides
+shared.learn(task, table = Q)
+separate.learn(task, table = Q_task)
+
+// No action script. No extra reward. No copied successes.
+// Both use reward = 1 only when the peg is fully inserted.</code></pre></details>
+    </div>
+  </section>
+
+  <section class="wrap section" id="single-task">
+    <div class="section-heading"><div><div class="eyebrow">02 / INSIDE A SINGLE LEARNER</div><h2>Follow one learning step.</h2></div><p>The animation is driven by the running Rust code.<br>Studio rendering. No recorded moves.</p></div>
     <div id="error" role="alert" hidden></div>
     <div class="lab-shell">
       <div class="lab-toolbar">
@@ -65,8 +114,10 @@
     </div>
   </section>
 
+  <section class="wrap section sampling-explanation" id="sampling-explained"><div><div class="eyebrow">A CURRICULUM, WITHOUT A MOVING START LINE</div><h2>Choose the next challenge.<br>Keep the starting places fixed.</h2></div><div><p>Success-guided sampling does <b>not</b> slide the robot farther from the goal every time it succeeds. The reset bank already contains early, middle and near-complete situations. It changes how often each is practiced.</p><div class="sampling-examples"><div><strong>0%</strong><span>Recent success</span><b>Weight 0.05</b><small>Still gets a chance</small></div><div><strong>50%</strong><span>Recent success</span><b>Weight 0.55</b><small>More practice here</small></div><div><strong>100%</strong><span>Recent success</span><b>Weight 0.05</b><small>Still gets revisited</small></div></div><p>These toy weights are normalized into probabilities. As easy endings become reliable, harder situations may get more practice—but there is no guaranteed near-to-far order. A start that becomes difficult again can regain attention. <a href="https://arxiv.org/html/2610.13354v1#S4.SS2">See the paper’s sampling rule ↗</a></p></div></section>
+
   <section class="wrap section explanation" id="explanation">
-    <div class="explanation-intro"><div class="eyebrow">THE IDEA, WITHOUT THE MACHINERY</div><h2>Practice the ending.<br>Give the beginning<br>somewhere to lead.</h2><p>With a reward only at the end, a randomly moving robot may never stumble into success. Useful starting situations make that first reward reachable.</p><div class="scope-note"><strong>A small analogy, honestly labeled.</strong><p>AlphaNIST uses PPO, neural networks, detailed simulation, and many assembly tasks. Here, a table of numbers learns one discrete toy task. We preserve the reset and reward ideas so you can see them working.</p></div></div>
+    <div class="explanation-intro"><div class="eyebrow">THE IDEA, WITHOUT THE MACHINERY</div><h2>Practice the ending.<br>Give the beginning<br>somewhere to lead.</h2><p>With a reward only at the end, a randomly moving robot may never stumble into success. Useful starting situations make that first reward reachable.</p><div class="scope-note"><strong>A small analogy, honestly labeled.</strong><p>AlphaNIST uses PPO, neural networks, detailed simulation, and many assembly tasks. Here, tables of numbers learn discrete peg layouts. The comparison shares matching states explicitly; this single-learner lab lets you inspect reset sampling and delayed credit.</p></div></div>
     <div class="lesson-steps">
       <article><span class="step-number">01</span><div><h3>Create situations, not instructions.</h3><p>We know where a completed peg belongs. Place it there, then back it out one unit. Now there is a partly assembled starting state—without a demonstrated action sequence.</p><p class="fine">OmniReset, which AlphaNIST adapts, uses physical perturbations and grasp sampling. Our toy uses direct geometry and discrete rules.</p><pre><code>complete = { at_socket, depth: 2, held: true }
 partial  = { ...complete, depth: 1 }</code></pre></div></article>
@@ -96,8 +147,10 @@ repeat:
 
   record_outcome_for_this_start()</code></pre><div class="code-notes"><h3>Three pieces to follow</h3><p><b>The world</b> decides what a move does. It contains no learned behavior.</p><p><b>The Q table</b> remembers which actions led toward future reward. This substitutes for the paper’s neural controller.</p><p><b>The reset sampler</b> chooses where to begin the next attempt. Its success history is separate from the Q table.</p><a href="./README.md" class="text-link">Read the complete walkthrough ↗</a><a href="./studio.js" class="text-link">Inspect the dependency-free 3D renderer ↗</a><a href="https://github.com/elliot-at-liminalnook/assembly-from-rewards" class="text-link" target="_blank" rel="noreferrer">Build, test, or fork on GitHub ↗</a></div></div>
     <details class="source-details"><summary>Read the actual Rust source compiled into this page <span>+</span></summary><p>The simulator, learner, reset sampler, browser interface, and native tests, with comments. The build copies this exact source alongside its compiled WebAssembly.</p><pre><code id="actual-source">Loading source…</code></pre></details>
+    <details class="source-details"><summary>Read the shared-versus-separate Rust experiment <span>+</span></summary><p>This second module uses the world rules above and adds shared or separate memories, paired practice, a transfer probe, and read-only playback.</p><pre><code id="transfer-source">Loading source…</code></pre></details>
   </section>
-  <section class="wrap closing"><h3>What this example leaves out</h3><p>Contact forces, camera perception, continuous motion, neural generalization, and multiple tasks. The original paper also includes movement penalties; this toy uses only the completion reward. Nothing here establishes real-robot performance.</p><div><a href="https://arxiv.org/html/2610.13354v1#S4" target="_blank" rel="noreferrer">AlphaNIST · method ↗</a><a href="https://arxiv.org/html/2603.15789v3#S3.SS2" target="_blank" rel="noreferrer">OmniReset · reset generation ↗</a></div></section>
+  <section class="wrap section walking-note"><div class="eyebrow">BEYOND ASSEMBLY</div><h2>What about a robot learning to walk?</h2><p>A useful extension would be practice across flat ground, small steps and rough terrain. Shared experience could teach balance and foot placement, while success-guided sampling could favor situations the robot can sometimes—but not always—handle. This is a proposed analogy, not an AlphaNIST result.</p><p>Knowing the destination is not enough to generate good walking states. Joint angles, momentum, foot contacts and terrain all matter. Starting upright near the goal may teach only the last step, not how to cross a gap. Terrain curricula, motion references or intermediate rewards can supply additional structure; the assembly paper does not establish that completion reward alone solves bipedal locomotion.</p><a href="https://proceedings.mlr.press/v78/florensa17a.html">Related idea: reverse curricula ↗</a> · <a href="https://arxiv.org/abs/2010.03848">Example: a guided curriculum for bipedal terrain walking ↗</a></section>
+  <section class="wrap closing"><h3>What this example leaves out</h3><p>Contact forces, camera perception, continuous motion, and learned generalization across different assembly geometries. The original paper also includes movement penalties; this toy uses only the completion reward. Nothing here establishes real-robot performance.</p><div><a href="https://arxiv.org/html/2610.13354v1#S4" target="_blank" rel="noreferrer">AlphaNIST · method ↗</a><a href="https://arxiv.org/html/2603.15789v3#S3.SS2" target="_blank" rel="noreferrer">OmniReset · reset generation ↗</a></div></section>
 </main>
 <footer class="wrap"><span>Built to be inspected, not taken on faith.</span><span>Rust + browser APIs · MIT-licensed demo</span></footer>
 <noscript><p>This interactive lesson requires JavaScript and WebAssembly. The written explanation and source repository are still available.</p></noscript>

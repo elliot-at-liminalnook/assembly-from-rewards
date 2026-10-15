@@ -7,11 +7,11 @@ pretrained weights, fake graph, external fonts, CDN, package manager, or backend
 
 **This is a conceptual model, not an AlphaNIST reproduction.** It replaces PPO and
 neural networks with tabular Q-learning, contact physics with discrete rules, and
-20 tasks with one peg and one socket. Its results say nothing about real robots.
+20 heterogeneous tasks with three related peg-carry layouts plus a single-task inspector. Its results say nothing about real robots.
 
 ## Run it
 
-Visit the deployed page, then choose **One action** to inspect a learning step or
+Visit the deployed page and choose **Compare 900 attempts** for the shared-versus-separate experiment. Below it, choose **One action** to inspect a learning step or
 **Train 1,000 episodes** to speed through practice. **Watch learned policy** starts
 with the peg on the table and runs the current policy without changing it.
 
@@ -28,7 +28,86 @@ python3 -m http.server 8000 --directory dist
 # Open http://localhost:8000 (double-clicking index.html will not load WASM).
 ```
 
-## The world: five positions, two heights, one peg
+## The main comparison: learning together versus separately
+
+There are three **related layouts**, not three distinct contact geometries. A peg
+starts 1, 2 or 4 positions left of the same socket, with the hand at the peg. All
+use exactly the same six actions and terminal reward. The longer routes overlap
+the shorter route. This is intentionally explicit: the shared controller reuses
+**the same Q row for the same physical state**. It does not learn a representation
+of shape, and it is not a reproduction of AlphaNIST's neural transfer.
+
+```text
+shared[state, action] = 0
+separate[task, state, action] = 0
+
+for task in repeating(A, B, C):
+    run one episode using shared
+    run one episode using separate[task]
+    // Both use the same Q update, reward, exploration, and 40-action limit.
+```
+
+Each pair of episodes has a deterministic common random seed. Full-start and
+uniform-reset modes therefore start both sides in the same state. Both get the
+same number of attempts per task and the same maximum horizon. Actual action
+counts differ when one finishes sooner; the page displays both counts. This is
+**matched attempts**, not matched actual transitions or GPU compute.
+
+In adaptive mode each arm samples starts using its own recent outcomes. Those
+starts can differ, so that experiment includes both sharing and its effect on
+adaptive reset selection. Task selection remains round-robin; unlike AlphaNIST,
+we do not sample globally across all task/reset pairs. Every mode uses the same
+fixed reset bank: full start, already held, or partly inserted for each layout.
+
+The graph counts how many of three deterministic full-start tests currently
+finish within 40 actions. It is not a statistical success rate. Evaluation and
+playback never train or change the random seed schedule. Curves and scores come
+from the compiled code; they are not drawn from the paper or stored results.
+
+### A direct check that easy practice transfers
+
+1. Choose **Fresh experiment: 300 easy-only attempts**. Both arms reset and train
+   only A. Both active tables learn identically: there is no shared-learner bonus.
+2. Inspect the row for “peg held, raised, one position left of the socket.” The
+   shared controller can use its learned values when acting on C. C's separate
+   table remains zero because C has received **zero training attempts**.
+3. Choose **Then add 90 hard-only attempts**. Now both controllers practice C.
+   The shared controller has an ending to connect to; C's specialist starts blank.
+   The hard starting state's earlier actions still have to be discovered.
+
+The microscope counts which source task updated this state; these are update
+counts, **not causal credit percentages**. The easy-only intervention isolates the
+source of the inherited values. A different seed may need more practice, and
+shared learning is not guaranteed to win every possible run. The default seed 7
+is retained from the original demo. Automated regression checks also cover seeds
+1–24 rather than relying only on that displayed run.
+
+For easier reading, this experiment lives in `src/transfer.rs` and reuses the
+original world rules from `src/lib.rs`. The page displays both source files.
+
+## Does success-guided sampling move the start farther away?
+
+No. It changes **probabilities over a fixed bank**, not the starting states
+themselves. A 50%-successful start gets weight 0.55; a 0% or 100% start gets 0.05
+in this toy. Normalize those weights to obtain sampling probabilities. All starts
+remain possible. Early learning can make near-goal starts easy and earlier starts
+more productive, producing an apparent backward curriculum without a prescribed
+near-to-far ordering. A previously mastered start can receive more attention if
+its success drops. Explicitly expanding starts outward is a different related
+method: [reverse curriculum generation](https://proceedings.mlr.press/v78/florensa17a.html).
+
+## Extending the idea to walking: a proposal, not an AlphaNIST result
+
+One could share a controller across flat ground, low steps and rough terrain,
+and allocate practice using recent success. But a valid walking state includes
+joint positions, velocities, momentum and foot contacts. Merely placing a biped
+near its destination does not teach balance or how to cross a gap. Appropriate
+reset generation and additional structure may be necessary. For an example of
+bipedal walking with terrain curricula and motion priors, see
+[Guided Curriculum Learning for Walking Over Complex Terrain](https://arxiv.org/abs/2010.03848).
+AlphaNIST does not establish sparse-reward-only learning of complex locomotion.
+
+## The single-task world: five positions, two heights, one peg
 
 The hand moves along a five-position rail. The peg starts at position 0, the
 socket is at 4, and the hand starts raised at 2. There are six actions: left,
@@ -127,6 +206,8 @@ AND action counts.
 | File | Purpose |
 |---|---|
 | `src/lib.rs` | State, rules, resets, sampling, Q-learning, numeric browser interface, native tests |
+| `src/transfer.rs` | Shared/separate learners, paired practice, provenance, read-only replay, comparison tests |
+| `web/comparison.js` | Side-by-side studio views, real comparison chart and transfer microscope |
 | `web/app.js` | Calls WASM; forwards states to the renderer; shows metrics and the exact Q update |
 | `web/studio.js` | Procedural 3D meshes, lighting, shadows, visual inverse kinematics, and cameras; no dependencies |
 | `web/index.html` | The lesson, pseudocode, controls, source viewer |
@@ -201,7 +282,7 @@ standard shell utilities, with no bundler or package manager.
   grasped and near-goal reset configurations without demonstration trajectories.
 
 This teaching project implements only a small analogy. It has no contact forces,
-perception, continuous control, multiple tasks, neural generalization, or robot
+perception, continuous control, neural generalization across geometries, or robot
 hardware validation. The original papers' performance numbers are not demo results.
 
 Original demo code: MIT license. The linked papers retain their own licenses.
